@@ -1,0 +1,13 @@
+{
+  "name": "shipyard",
+  "version": "0.1.0",
+  "description": "Planner -> Coder -> Tester -> Reviewer pipeline for infrastructure-as-code and app changes. Validate-only (never touches the live system) with a structurally read-only security review gate.",
+  "author": {
+    "name": "DimitriosBatsinis",
+    "url": "https://github.com/DimitriosBatsinis"
+  },
+  "homepage": "https://github.com/DimitriosBatsinis/shipyard",
+  "repository": "https://github.com/DimitriosBatsinis/shipyard",
+  "license": "MIT",
+  "keywords": ["devops", "infrastructure", "pipeline", "code-review", "security", "quadlet", "nftables", "caddy"]
+}

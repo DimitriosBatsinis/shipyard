@@ -1,0 +1,21 @@
+# Pattern file: hardened rootless Quadlet unit. New units should match this posture.
+[Unit]
+Description=Example web app
+After=network-online.target
+
+[Container]
+Image=docker.io/library/nginx:1.27-alpine
+PublishPort=127.0.0.1:8080:80
+NoNewPrivileges=true
+DropCapability=ALL
+AddCapability=NET_BIND_SERVICE
+ReadOnly=true
+User=10000:10000
+EnvironmentFile=/etc/example/webapp.env
+Volume=/srv/example/data:/data:ro
+
+[Service]
+Restart=on-failure
+
+[Install]
+WantedBy=default.target
