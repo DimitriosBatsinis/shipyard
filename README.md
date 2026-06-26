@@ -42,7 +42,7 @@ use `/shipyard:ship`.)
 Read the result, then apply it yourself:
 
 ```bash
-cat .pipeline/spec.md .pipeline/changes.md .pipeline/test-results.md .pipeline/review.md
+cat .pipeline/run/spec.md .pipeline/run/changes.md .pipeline/run/test-results.md .pipeline/run/review.md
 git diff --cached
 git commit -m "..."   # your sign-off — the pipeline never commits or applies
 ```
@@ -83,6 +83,12 @@ How it works:
 6. **Resume** — re-run `/voyage` to continue from where it stopped. It reads `plan.md` on
    disk (the source of truth), surfaces *why* a task failed, and offers retry / skip /
    edit-task — or, for a post-commit regression, revert / reset-to-parent / insert-fix-task.
+   `/ship` is for one-off changes only: if a voyage is in progress it refuses to run and
+   points you back to `/voyage` to resume, and it never touches `plan.md`.
+
+Durable voyage state (`.pipeline/plan.md`, `.pipeline/failed/`) is kept separate from the
+ephemeral per-run handoffs (`.pipeline/run/spec.md`, `changes.md`, `test-results.md`,
+`review.md`, `diff.txt`), so a `/ship` cleanup can never delete a voyage's roadmap.
 
 Like `/ship`, `/voyage` **never pushes and never touches the live system** — it only writes,
 validates, and commits to your local branch. Start it on a clean, non-default branch.
@@ -99,7 +105,7 @@ validates, and commits to your local branch. Start it on a clean, non-default br
 ## Safety model
 
 - The reviewer has **no Bash**, so "read-only" is structural, not a promise. The
-  orchestrator hands it the diff via `.pipeline/diff.txt`.
+  orchestrator hands it the diff via `.pipeline/run/diff.txt`.
 - The reviewer **does not trust the test-results claim** — it reconciles it against
   the diff and source and flags any report it can't reconcile.
 - A **SECURITY OVERRIDE** makes any secret/credential/firewall-widening issue

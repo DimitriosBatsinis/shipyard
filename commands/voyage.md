@@ -21,7 +21,7 @@ Always stage with a pathspec that excludes the scratch dir:
 
     git add -A -- ':!.pipeline'
 
-Then `git diff --cached > .pipeline/diff.txt` for the reviewer, and `git commit` for a task.
+Then `git diff --cached > .pipeline/run/diff.txt` for the reviewer, and `git commit` for a task.
 This guarantees pipeline scratch (spec.md, changes.md, diff.txt, failed/, the churning
 plan.md) never enters a task commit or the reviewer's diff, regardless of the target repo's
 `.gitignore`. (Belt-and-suspenders: if `.pipeline/` is not already ignored, you may append it
@@ -39,7 +39,8 @@ to the project `.gitignore`, but the pathspec exclude is what makes this correct
    - Must be a git repo on a NON-default branch (commits + the reviewer's diff need it).
    - Working tree must be CLEAN: if `git status --porcelain` is non-empty, STOP and ask me
      to commit/stash first (so task 1's commit doesn't sweep up pre-existing edits).
-   - `mkdir -p .pipeline`.
+   - `mkdir -p .pipeline/run` (creates the ephemeral handoff dir and `.pipeline` itself;
+     the durable `plan.md` and `failed/` live at the `.pipeline/` top level).
    - Read `.pipeline/plan.md` from disk if it exists and route:
        * `Project-State: regressed:<T>`  -> go to REGRESSION RESUME (step 6b), even if all
          tasks are done.
@@ -67,27 +68,27 @@ to the project `.gitignore`, but the pathspec exclude is what makes this correct
    Pick the next task T with `Status: pending` AND every `Depends on` task `done`
    (topological order). If pending tasks exist but none are eligible, report the
    blocked/stranded tasks and STOP.
-   a. If `.pipeline/spec.md` etc. exist from a prior attempt, archive them to
+   a. If `.pipeline/run/spec.md` etc. exist from a prior attempt, archive them to
       `.pipeline/failed/<T-id>/`; then clear live handoffs:
-          rm -f .pipeline/spec.md .pipeline/changes.md .pipeline/test-results.md \
-                .pipeline/review.md .pipeline/diff.txt
+          rm -f .pipeline/run/spec.md .pipeline/run/changes.md .pipeline/run/test-results.md \
+                .pipeline/run/review.md .pipeline/run/diff.txt
    b. Set T `Status: in-progress` and `Attempts: 0` in plan.md.
    c. Delegate to the `ship-planner` subagent for task T. Tell it the task id and that
-      `.pipeline/plan.md` exists (project mode). Wait for `.pipeline/spec.md`. If it has
+      `.pipeline/plan.md` exists (project mode). Wait for `.pipeline/run/spec.md`. If it has
       OPEN QUESTIONS, archive handoffs, set T `Status: failed`, and STOP.
    d. PER-TASK RETRY LOOP (orchestrator-level — ship-coder does NOT self-iterate).
       Attempts are FIX-FORWARD: the tree is NOT reset between attempts. For attempt 1..3:
         i.   Delegate to `ship-coder`. On attempt > 1, tell it to read the prior
-             `.pipeline/test-results.md` / `.pipeline/review.md` as fix-this feedback, and
+             `.pipeline/run/test-results.md` / `.pipeline/run/review.md` as fix-this feedback, and
              to DELETE any wrong-path files left by the previous attempt. Wait for
-             `.pipeline/changes.md`. Increment T `Attempts`.
-        ii.  Delegate to `ship-tester`. Wait for `.pipeline/test-results.md`.
+             `.pipeline/run/changes.md`. Increment T `Attempts`.
+        ii.  Delegate to `ship-tester`. Wait for `.pipeline/run/test-results.md`.
                - RED: if attempts remain, loop (feedback carries to the next coder run);
                  else EXHAUSTED -> go to (f) FAIL.
         iii. Stage and capture the diff, then review:
                  git add -A -- ':!.pipeline'
-                 git diff --cached > .pipeline/diff.txt
-             Delegate to `ship-reviewer`. Wait for `.pipeline/review.md`.
+                 git diff --cached > .pipeline/run/diff.txt
+             Delegate to `ship-reviewer`. Wait for `.pipeline/run/review.md`.
                - SHIP        -> success, go to (e).
                - NEEDS WORK  -> if attempts remain, loop (feedback to coder); else
                                 EXHAUSTED -> (f) FAIL.

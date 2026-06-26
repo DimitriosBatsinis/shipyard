@@ -12,7 +12,7 @@ Given a change request:
    configs, firewall rules, scripts, or app code. Do not guess what exists.
 2. Identify the change TYPE (container/Quadlet, reverse-proxy, firewall,
    shell/Python script, app code, database, mixed) — this drives validation.
-3. Write a spec to .pipeline/spec.md containing:
+3. Write a spec to .pipeline/run/spec.md containing:
    - Files to create or modify, with exact paths.
    - The exact desired end state (directives, config keys, rules, signatures).
    - Security posture that MUST be preserved (least privilege, dropped caps,
