@@ -10,6 +10,16 @@ apply and push by hand.
 Built for infrastructure-as-code (Podman/Quadlet, Caddy/nginx, nftables, shell
 scripts) but works on general app code too.
 
+## Which command?
+
+| You want to… | Use | Result |
+|---|---|---|
+| One bounded change (a unit, a rule, a script) | `/ship` | a validated, security-reviewed **staged** diff you commit yourself |
+| A whole project / multi-step feature | `/voyage` | a roadmap you approve, then per-task **commits** on your branch |
+
+Rule of thumb: single validation → `/ship`; needs a plan → `/voyage`. Running `/ship`
+mid-voyage is refused (it points you back to `/voyage` to resume).
+
 ## Install
 
 ```bash
@@ -92,6 +102,112 @@ ephemeral per-run handoffs (`.pipeline/run/spec.md`, `changes.md`, `test-results
 
 Like `/ship`, `/voyage` **never pushes and never touches the live system** — it only writes,
 validates, and commits to your local branch. Start it on a clean, non-default branch.
+
+## Examples
+
+### `/ship` — a single change
+
+```bash
+cd ~/infra
+git checkout -b change/jellyfin-unit   # the reviewer needs a git diff
+claude
+```
+
+Inside Claude Code:
+
+```text
+/ship add a hardened Quadlet unit for jellyfin, localhost-only, following examples/webapp.container
+```
+
+The pipeline runs planner → coder → tester → reviewer and stops with a verdict
+(`SHIP` / `NEEDS WORK` / `BLOCK`), leaving the change **staged but not committed**. Inspect
+the handoffs, then sign off yourself:
+
+```bash
+cat .pipeline/run/spec.md .pipeline/run/review.md   # what it did + the verdict
+git diff --cached
+git commit -m "Add hardened jellyfin Quadlet unit"  # your sign-off — the pipeline never commits
+```
+
+(If `/ship` doesn't resolve, use the namespaced `/shipyard:ship`.)
+
+### `/voyage` — a whole project
+
+```bash
+cd ~/projects/portfolio
+git init -q && git checkout -b voyage/build   # git repo, non-default branch, clean tree
+claude
+```
+
+Inside Claude Code:
+
+```text
+/voyage create a personal portfolio site: a projects gallery, an About Me page, and a skills section
+```
+
+`/voyage` decomposes the request, writes `.pipeline/plan.md`, and **stops at the roadmap
+gate** for your approval:
+
+```text
+# Project: Personal portfolio site
+Request: create a personal portfolio site: a projects gallery, an About Me page, and a skills section
+Branch: voyage/build
+Project-State: ok
+
+## Open Questions
+(none)
+
+## Tasks
+- [ ] T01 — Scaffold static site structure
+  - Goal: base index.html, assets dir, and a build/serve script
+  - Touches: index.html, assets/, serve.sh
+  - Validation: shell
+  - Depends on: none
+  - Status: pending
+  - Attempts: 0
+  - Commit: -
+- [ ] T02 — Projects gallery section
+  - Goal: gallery markup + styles rendering a list of projects
+  - Touches: index.html, assets/styles.css
+  - Validation: app
+  - Depends on: T01
+  - Status: pending
+  - Attempts: 0
+  - Commit: -
+- [ ] T03 — About Me page
+  - Goal: about.html linked from the nav
+  - Touches: about.html, index.html
+  - Validation: app
+  - Depends on: T01
+  - Status: pending
+  - Attempts: 0
+  - Commit: -
+- [ ] T04 — Skills section
+  - Goal: skills block on the home page
+  - Touches: index.html, assets/styles.css
+  - Validation: app
+  - Depends on: T01
+  - Status: pending
+  - Attempts: 0
+  - Commit: -
+```
+
+Approve it, and `/voyage` builds each task in dependency order, committing each on success:
+
+```text
+voyage: T01 Scaffold static site structure
+voyage: T02 Projects gallery section
+voyage: T03 About Me page
+voyage: T04 Skills section
+```
+
+If it stops (a failed task or a regression), just **re-run `/voyage` to resume** — it reads
+`plan.md` from disk and offers retry / skip / edit-task (or revert / reset-to-parent /
+insert-fix-task for a post-commit regression):
+
+```text
+/voyage
+```
 
 ## What each agent does
 
