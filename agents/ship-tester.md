@@ -25,3 +25,16 @@ migrations against a real database. Validate only.
 
 If a required validator binary is missing, say so explicitly rather than skipping
 silently and claiming a pass.
+
+REGRESSION MODE (project-level gate within a voyage): When invoked in regression mode you
+IGNORE `.pipeline/changes.md` and instead check that the project as a whole is still healthy.
+You are told a LEVEL:
+  - level=smoke: cheap, fast checks ONLY (syntax/lint level — e.g. `bash -n`, `shellcheck`,
+    `nft -c`, `caddy validate`, `python -m py_compile`) on the files named in the request.
+    Do NOT run the repo's full build/test suite at this level.
+  - level=full: re-validate every infra file changed in the project so far AND run the
+    repo's full build/test command if one exists. This set grows as the project grows, so
+    this level is intentionally reserved for checkpoints and project end.
+Record commands + real exit codes to `.pipeline/test-results.md` and report any regression;
+never fix anything. If the repo has no build/test command, say so — a full pass then
+degrades to infra re-validation only rather than faking a pass.

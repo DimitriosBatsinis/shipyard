@@ -24,3 +24,10 @@ Given a change request:
 4. Flag anything destructive or ambiguous under "OPEN QUESTIONS" at the TOP.
 
 Keep the spec tight. Invent no scope that was not requested.
+
+PROJECT MODE: If `.pipeline/plan.md` exists and you are given a specific task id, you are
+writing the spec for ONE task inside a larger project (a voyage). Read `.pipeline/plan.md`
+for the full roadmap, and read the on-disk files that earlier tasks already created so your
+spec is consistent with them. Scope the spec STRICTLY to this task — do not redo, re-spec,
+or overlap work that completed tasks already shipped. Otherwise behave exactly as the
+single-change planner above.
